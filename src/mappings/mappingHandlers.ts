@@ -1,4 +1,4 @@
-import {CollectionEntity, Emote, FailedEntity, NFTEntity, RemarkEntity} from "../types";
+import { CollectionEntity, Emote, FailedEntity, NFTEntity, RemarkEntity } from "../types";
 import { SubstrateExtrinsic } from "@subql/types";
 import { getRemarksFrom, RemarkResult } from './utils';
 import { Collection, eventFrom, getNftId, NFT, RmrkEvent, RmrkInteraction } from './utils/types';
@@ -15,7 +15,7 @@ async function mint(remark: RemarkResult) {
     const entity = await CollectionEntity.get(collection.id)
     canOrElseError<CollectionEntity>(exists, entity)
     const final = CollectionEntity.create(collection)
-    
+
     final.name = collection.name.trim()
     final.max = Number(collection.max)
     final.issuer = remark.caller
@@ -42,8 +42,9 @@ async function mintNFT(remark: RemarkResult) {
     const collection = await CollectionEntity.get(nft.collection)
     canOrElseError<CollectionEntity>(exists, collection, true)
     isOwnerOrElseError(collection, remark.caller)
-    const final = NFTEntity.create(getNftId(nft, remark.blockNumber))
-    
+    // const final = NFTEntity.create(nft)
+    const final = new NFTEntity(getNftId(nft, remark.blockNumber));
+
     // final.id = getNftId(nft, remark.blockNumber)
     final.issuer = remark.caller
     final.currentOwner = remark.caller
@@ -54,10 +55,10 @@ async function mintNFT(remark: RemarkResult) {
     final.collectionId = nft.collection
     final.sn = nft.sn
     final.metadata = nft.metadata
-    final.price = BigInt(0) 
+    final.price = BigInt(0)
     final.burned = false
     final.events = [eventFrom(RmrkEvent.MINTNFT, remark, '')]
-    
+
     logger.info(`SAVED [MINT] ${final.id}`)
     await final.save()
   } catch (e) {
@@ -89,7 +90,7 @@ async function send(remark: RemarkResult) {
 
 async function buy(remark: RemarkResult) {
   let interaction = null
-  
+
   try {
     interaction = ensureInteraction(NFTUtils.unwrap(remark.value) as RmrkInteraction)
     const nft = await NFTEntity.get(interaction.id)
@@ -114,7 +115,7 @@ async function buy(remark: RemarkResult) {
   // enough money ?
 }
 
-async function consume(remark: RemarkResult ) {
+async function consume(remark: RemarkResult) {
   let interaction = null
 
   try {
@@ -134,7 +135,7 @@ async function consume(remark: RemarkResult ) {
   }
 }
 
-async function list(remark: RemarkResult ) {
+async function list(remark: RemarkResult) {
   let interaction = null
 
   try {
@@ -160,9 +161,9 @@ async function list(remark: RemarkResult ) {
   // is owner
 }
 
-async function changeIssuer(remark: RemarkResult ) {
+async function changeIssuer(remark: RemarkResult) {
   let interaction = null
-  
+
   try {
     interaction = ensureInteraction(NFTUtils.unwrap(remark.value) as RmrkInteraction)
     canOrElseError<RmrkInteraction>(hasMeta, interaction, true)
@@ -176,11 +177,11 @@ async function changeIssuer(remark: RemarkResult ) {
     logger.warn(`[CHANGEISSUER] ${e.message} ${JSON.stringify(interaction)}`)
     await logFail(JSON.stringify(interaction), e.message, RmrkEvent.CHANGEISSUER)
   }
-  
+
 
 }
 
-async function emote(remark: RemarkResult ) {
+async function emote(remark: RemarkResult) {
   let interaction = null
 
   try {
@@ -236,7 +237,7 @@ async function logFail(message: string, reason: string, interaction: RmrkEvent) 
 
 
 export async function handleCall(extrinsic: SubstrateExtrinsic): Promise<void> {
-    const records = getRemarksFrom(extrinsic)
+  const records = getRemarksFrom(extrinsic)
     .map((r, i) => {
       try {
         return { ...r, id: `${r.blockNumber}-${i}`, interaction: NFTUtils.getAction(hexToString(r.value)) }
@@ -246,14 +247,14 @@ export async function handleCall(extrinsic: SubstrateExtrinsic): Promise<void> {
     })
     .map(RemarkEntity.create);
 
-    for (const record of records) {
-        try {
-            await record.save()
-        } catch (e) {
-            logger.warn(`[ERR] Can't save RMRK at block ${record.blockNumber} because \n${e}`)
-        }
-        
+  for (const record of records) {
+    try {
+      await record.save()
+    } catch (e) {
+      logger.warn(`[ERR] Can't save RMRK at block ${record.blockNumber} because \n${e}`)
     }
+
+  }
 }
 
 
@@ -293,11 +294,11 @@ export async function handleRemark(extrinsic: SubstrateExtrinsic): Promise<void>
           break;
         default:
           logger.warn(`[SKIP] ${event}::${remark.value}::${remark.blockNumber}`)
-          // throw new EvalError(`Unable to evaluate following string, ${event}::${remark.value}`)
+        // throw new EvalError(`Unable to evaluate following string, ${event}::${remark.value}`)
       }
     } catch (e) {
       logger.error(`[MALFORMED] ${remark.blockNumber}::${hexToString(remark.value)}`)
     }
-      
+
   }
 }
