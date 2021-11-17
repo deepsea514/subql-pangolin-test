@@ -4,7 +4,7 @@ repository: ''
 schema: ./schema.graphql
 network:
   endpoint: wss://pangolin-rpc.darwinia.network/
-  dictionary: https://api.subquery.network/sq/snowwhite-boss/pangolin-dictionary__c25vd
+  # dictionary: https://api.subquery.network/sq/TopCodeBeast/pangolin_test_subql-dictionary__VG9wQ
   types:
     AccountData:
       feeFrozen: Balance
